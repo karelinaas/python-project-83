@@ -1,0 +1,16 @@
+[project]
+name = "hexlet-code"
+version = "0.1.0"
+description = "Flask Pages Analyzer"
+authors = [
+    { name = "Alexandra Minina", email = "i@minina-work.ru" },
+    { name = "Hexlet", email = "hexlet@hexlet.io" }
+]
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "pytest>=9.0.2",
+    "pytest-cov>=4.0.0",
+    "ruff",
+    "flask>=3.1.3",
+]

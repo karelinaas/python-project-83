@@ -1,0 +1,7 @@
+.idea
+.venv
+*.cast
+*.egg-info
+.coverage
+.python-version
+coverage.xml
