@@ -14,4 +14,5 @@ dependencies = [
     "ruff",
     "flask>=3.1.3",
     "gunicorn>=25.3.0",
+    "python-dotenv>=1.2.2",
 ]
