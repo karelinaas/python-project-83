@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="jumbotron jumbotron-fluid bg-light p-5">
+    <h1 class="display-4">Анализатор страниц</h1>
+    <p class="lead">Бесплатная проверка сайтов на SEO-пригодность</p>
+    <hr class="my-4">
+    <form action="/urls" method="post" class="d-flex justify-content-center">
+        <input type="text" name="url" placeholder="https://www.example.com" class="form-control form-control-lg" required>
+        <button type="submit" class="btn btn-primary btn-lg ms-2">Проверить</button>
+    </form>
+</div>
+{% endblock %}
