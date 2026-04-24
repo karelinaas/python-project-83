@@ -4,7 +4,15 @@ from urllib.parse import urlparse
 
 import validators
 from dotenv import load_dotenv
-from flask import Flask, flash, redirect, render_template, request, url_for
+from flask import (
+    Flask,
+    flash,
+    redirect,
+    render_template,
+    request,
+    Response,
+    url_for,
+)
 
 from .models import URL
 
@@ -14,17 +22,17 @@ app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
 
 
 @app.context_processor
-def inject_now():
+def inject_now() -> dict[str, datetime]:
     return {"now": datetime.now()}
 
 
 @app.route("/")
-def index():
+def index() -> str:
     return render_template("index.html")
 
 
 @app.post("/urls")
-def add_url():
+def add_url() -> Response | str:
     url = request.form.get("url", "").strip()
     
     # Валидация
@@ -61,14 +69,14 @@ def add_url():
 
 
 @app.get("/urls")
-def urls_list():
+def urls_list() -> str:
     urls = URL.get_all()
     return render_template("urls.html", urls=urls)
 
 
-@app.get("/urls/<int:id>")
-def show_url(id):
-    url = URL.find_by_id(id)
+@app.get("/urls/<int:url_id>")
+def show_url(url_id: int) -> Response | str:
+    url = URL.find_by_id(url_id)
     if not url:
         flash("Страница не найдена", "danger")
         return redirect(url_for("urls_list"))

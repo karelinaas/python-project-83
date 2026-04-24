@@ -5,13 +5,16 @@ import psycopg
 from psycopg.rows import dict_row
 
 
-def get_db_connection():
-    return psycopg.connect(os.getenv("DATABASE_URL"), row_factory=dict_row)
+def get_db_connection() -> psycopg.Connection:
+    database_url: str | None = os.environ.get("DATABASE_URL")
+    if not database_url:
+        raise Exception("DATABASE_URL environment variable not set")
+    return psycopg.connect(database_url, row_factory=dict_row)
 
 
 class URL:
     @staticmethod
-    def find_by_name(name):
+    def find_by_name(name: str) -> psycopg.rows.Row | None:
         """Найти URL по имени"""
         with get_db_connection() as conn:
             with conn.cursor() as cur:
@@ -19,7 +22,7 @@ class URL:
                 return cur.fetchone()
 
     @staticmethod
-    def find_by_id(url_id):
+    def find_by_id(url_id: int) -> psycopg.rows.Row | None:
         """Найти URL по ID"""
         with get_db_connection() as conn:
             with conn.cursor() as cur:
@@ -27,7 +30,7 @@ class URL:
                 return cur.fetchone()
 
     @staticmethod
-    def create(name):
+    def create(name: str) -> psycopg.rows.Row | None:
         """Создать новый URL"""
         # Нормализуем имя сайта
         parsed = urlparse(name)
@@ -51,7 +54,7 @@ class URL:
                 return URL.find_by_id(url_id)
 
     @staticmethod
-    def get_all():
+    def get_all() -> list[psycopg.rows.Row] | None:
         """Получить все URL, отсортированные по created_at DESC"""
         with get_db_connection() as conn:
             with conn.cursor() as cur:
