@@ -15,7 +15,7 @@
                     </tr>
                     <tr>
                         <th>Имя</th>
-                        <td>{{ url.name }}</td>
+                        <td>https://{{ url.name }}</td>
                     </tr>
                     <tr>
                         <th>Дата создания</th>
@@ -25,7 +25,7 @@
             </table>
         </div>
 
-        <a href="{{ url_for('urls_list') }}" class="btn btn-secondary">К списку сайтов</a>
+        <a href="{{ url_for('urls.urls_list') }}" class="btn btn-secondary">К списку сайтов</a>
 
         <h2 class="mt-4">Проверки</h2>
         <button type="button" class="btn btn-primary mb-3">Запустить проверку</button>

@@ -3,6 +3,9 @@ PORT ?= 8000
 lint:
 	uv run ruff check page_analyzer
 
+lint-fix:
+	uv run ruff check page_analyzer --fix
+
 install:
 	uv sync
 
