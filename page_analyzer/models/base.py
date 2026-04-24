@@ -78,17 +78,23 @@ class BaseModel(abc.ABC):
     ) -> list[Row] | Row | None:
         """Единая точка входа для выполнения запросов."""
         with get_db_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(query, params)
+            try:
+                with conn.cursor() as cur:
+                    cur.execute(query, params)
 
-                if query.strip().upper().startswith(
-                    ("INSERT", "UPDATE", "DELETE")
-                ):
-                    conn.commit()
+                    if query.strip().upper().startswith(
+                        ("INSERT", "UPDATE", "DELETE")
+                    ):
+                        conn.commit()
 
-                if return_one_entity:
-                    return cur.fetchone()
-                return cur.fetchall()
+                    if return_one_entity:
+                        return cur.fetchone()
+                    return cur.fetchall()
+            except Exception as e:
+                conn.rollback()
+                raise e
+            finally:
+                conn.close()
 
 
 class UniqueModel(BaseModel):

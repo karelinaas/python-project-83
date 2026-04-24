@@ -29,11 +29,11 @@
 
         <h2 class="mt-4">Проверки</h2>
         <form action="{{ url_for('urls.create_check', url_id=url.id) }}" method="post" class="mb-3">
-            <button type="submit" class="btn btn-primary">Запустить проверку</button>
+            <input type="submit" class="btn btn-primary" value="Запустить проверку">
         </form>
 
         <div class="table-responsive">
-            <table class="table table-bordered">
+            <table class="table table-bordered" data-test="checks">
                 <thead>
                     <tr>
                         <th>ID</th>
