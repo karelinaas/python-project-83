@@ -7,7 +7,7 @@ CREATE TABLE urls (
 CREATE TABLE url_checks (
     id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     url_id BIGINT NOT NULL REFERENCES urls(id) ON DELETE CASCADE,
-    status_code SMALLINT CHECK (status_code >= 0 AND status_code <= 999),
+    status_code SMALLINT CHECK (status_code >= 0 AND status_code <= 999) DEFAULT 0,
     h1 VARCHAR(1000),
     title VARCHAR(1000),
     description VARCHAR(1000),

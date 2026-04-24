@@ -12,7 +12,7 @@ from flask import (
     url_for,
 )
 
-from page_analyzer.models import URL
+from page_analyzer.models import URL, UrlCheck
 
 urls = Blueprint("urls", __name__, template_folder="templates")
 
@@ -76,4 +76,22 @@ def show_url(url_id: int) -> Response | str:
     if not url:
         flash("Страница не найдена", "danger")
         return redirect(url_for("urls.urls_list"))
-    return render_template("url.html", url=url)
+    
+    checks = UrlCheck.get_by_url_id(url_id)
+    return render_template("url.html", url=url, checks=checks)
+
+
+@urls.post("/urls/<int:url_id>/checks")
+def create_check(url_id: int) -> Response | str:
+    url = URL.find_by_id(url_id)
+    if not url:
+        flash("Страница не найдена", "danger")
+        return redirect(url_for("urls.urls_list"))
+    
+    check = UrlCheck.create(url_id)
+    if check:
+        flash("Страница успешно проверена", "success")
+    else:
+        flash("Произошла ошибка при проверке", "danger")
+    
+    return redirect(url_for("urls.show_url", url_id=url_id))

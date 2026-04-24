@@ -28,11 +28,13 @@
         <a href="{{ url_for('urls.urls_list') }}" class="btn btn-secondary">К списку сайтов</a>
 
         <h2 class="mt-4">Проверки</h2>
-        <button type="button" class="btn btn-primary mb-3">Запустить проверку</button>
+        <form action="{{ url_for('urls.create_check', url_id=url.id) }}" method="post" class="mb-3">
+            <button type="submit" class="btn btn-primary">Запустить проверку</button>
+        </form>
 
         <div class="table-responsive">
             <table class="table table-bordered">
-                <tbody>
+                <thead>
                     <tr>
                         <th>ID</th>
                         <th>Код ответа</th>
@@ -41,6 +43,24 @@
                         <th>description</th>
                         <th>Дата создания</th>
                     </tr>
+                </thead>
+                <tbody>
+                    {% if checks %}
+                        {% for check in checks %}
+                        <tr>
+                            <td>{{ check.id }}</td>
+                            <td>{{ check.status_code if check.status_code != 0 else '' }}</td>
+                            <td>{{ check.h1 or '' }}</td>
+                            <td>{{ check.title or '' }}</td>
+                            <td>{{ check.description or '' }}</td>
+                            <td>{{ check.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center">Проверок пока нет</td>
+                        </tr>
+                    {% endif %}
                 </tbody>
             </table>
         </div>
