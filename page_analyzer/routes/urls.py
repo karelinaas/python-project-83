@@ -85,7 +85,7 @@ def show_url(url_id: int) -> Response | str:
 
 
 @urls.post("/urls/<int:url_id>/checks")
-def create_check(url_id: int) -> Response | str:
+def create_check(url_id: int) -> Response:
     url = URL().get(url_id)
     if not url:
         flash("Страница не найдена", "danger")
