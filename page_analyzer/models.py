@@ -1,20 +1,11 @@
-import os
-from urllib.parse import urlparse
+from psycopg.rows import Row
 
-import psycopg
-from psycopg.rows import dict_row
-
-
-def get_db_connection() -> psycopg.Connection:
-    database_url: str | None = os.environ.get("DATABASE_URL")
-    if not database_url:
-        raise Exception("DATABASE_URL environment variable not set")
-    return psycopg.connect(database_url, row_factory=dict_row)
+from page_analyzer.config.database import get_db_connection
 
 
 class URL:
     @staticmethod
-    def find_by_name(name: str) -> psycopg.rows.Row | None:
+    def find_by_name(name: str) -> Row | None:
         """Найти URL по имени"""
         with get_db_connection() as conn:
             with conn.cursor() as cur:
@@ -22,7 +13,7 @@ class URL:
                 return cur.fetchone()
 
     @staticmethod
-    def find_by_id(url_id: int) -> psycopg.rows.Row | None:
+    def find_by_id(url_id: int) -> Row | None:
         """Найти URL по ID"""
         with get_db_connection() as conn:
             with conn.cursor() as cur:
@@ -30,7 +21,7 @@ class URL:
                 return cur.fetchone()
 
     @staticmethod
-    def create(name: str) -> psycopg.rows.Row | None:
+    def create(name: str) -> Row | None:
         """Создать новый URL"""
         with get_db_connection() as conn:
             with conn.cursor() as cur:
@@ -50,7 +41,7 @@ class URL:
                 return URL.find_by_id(url_id)
 
     @staticmethod
-    def get_all() -> list[psycopg.rows.Row] | None:
+    def get_all() -> list[Row] | None:
         """Получить все URL, отсортированные по created_at DESC"""
         with get_db_connection() as conn:
             with conn.cursor() as cur:
