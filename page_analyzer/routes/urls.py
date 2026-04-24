@@ -77,7 +77,7 @@ def show_url(url_id: int) -> Response | str:
         flash("Страница не найдена", "danger")
         return redirect(url_for("urls.urls_list"))
     
-    checks = UrlCheck.get_by_url_id(url_id)
+    checks = UrlCheck().filter({"url_id": url_id}, return_one_entity=False)
     return render_template("url.html", url=url, checks=checks)
 
 
@@ -88,7 +88,7 @@ def create_check(url_id: int) -> Response | str:
         flash("Страница не найдена", "danger")
         return redirect(url_for("urls.urls_list"))
     
-    check = UrlCheck.create(url_id)
+    check = UrlCheck().create({"url_id": url_id})
     if check:
         flash("Страница успешно проверена", "success")
     else:
