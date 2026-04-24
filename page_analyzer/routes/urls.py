@@ -77,7 +77,7 @@ def show_url(url_id: int) -> Response | str:
         flash("Страница не найдена", "danger")
         return redirect(url_for("urls.urls_list"))
     
-    checks = UrlCheck().filter({"url_id": url_id}, return_one_entity=False)
+    checks = UrlCheck().filter({"url_id": url_id})
     return render_template("url.html", url=url, checks=checks)
 
 

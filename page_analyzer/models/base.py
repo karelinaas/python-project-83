@@ -15,7 +15,7 @@ class BaseModel(abc.ABC):
     def filter(
         self,
         filter_parameters: dict[str, Any],
-        return_one_entity: bool = True,
+        return_one_entity: bool = False,
     ) -> list[Row] | Row | None:
         filter_string = ""
         filter_values = tuple()
@@ -50,7 +50,7 @@ class BaseModel(abc.ABC):
             params=tuple(column_values.values()),
         )["id"]
 
-        return self.get({"id": entity_id})
+        return self.get(entity_id)
 
     def get_all(
         self,
@@ -106,7 +106,7 @@ class UniqueModel(BaseModel):
         **kwargs,
     ) -> Row | None:
         if check_existing_entity:
-            existing_entity = self.check_exists_before_insert(*args, **kwargs)
+            existing_entity = self.check_exists_before_insert(column_values)
             if existing_entity:
                 return existing_entity
         return super().create(column_values)
