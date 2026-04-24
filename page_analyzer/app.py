@@ -6,11 +6,11 @@ import validators
 from dotenv import load_dotenv
 from flask import (
     Flask,
+    Response,
     flash,
     redirect,
     render_template,
     request,
-    Response,
     url_for,
 )
 

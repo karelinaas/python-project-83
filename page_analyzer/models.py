@@ -39,7 +39,10 @@ class URL:
         with get_db_connection() as conn:
             with conn.cursor() as cur:
                 # Проверяем, существует ли уже такой URL
-                cur.execute("SELECT * FROM urls WHERE name = %s", (normalized_name,))
+                cur.execute(
+                    "SELECT * FROM urls WHERE name = %s",
+                    (normalized_name,),
+                )
                 existing = cur.fetchone()
                 if existing:
                     return existing
