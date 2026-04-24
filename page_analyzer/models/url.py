@@ -8,7 +8,10 @@ from page_analyzer.models.base import UniqueModel
 class URL(UniqueModel):
     table_name = "urls"
 
-    def check_exists_before_insert(self, column_values: dict[str, Any]) -> Row | None:
+    def check_exists_before_insert(
+        self,
+        column_values: dict[str, Any],
+    ) -> Row | None:
         if "name" not in column_values:
             raise Exception("Model is unique by name")
 

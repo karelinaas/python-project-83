@@ -55,7 +55,10 @@ def add_url() -> Response | str | tuple[str, int]:
         return redirect(url_for("urls.show_url", url_id=existing_url["id"]))
 
     # Создание нового URL
-    new_url = URL().create({"name": normalized_name}, check_existing_entity=False)
+    new_url = URL().create(
+        {"name": normalized_name},
+        check_existing_entity=False,
+    )
     if new_url:
         flash("Страница успешно добавлена", "success")
         return redirect(url_for("urls.show_url", url_id=new_url["id"]))
