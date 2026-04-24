@@ -28,15 +28,11 @@ class BaseModel(abc.ABC):
             filter_values += (value,)
         filter_string = filter_string.rstrip(" AND ")
 
-        with get_db_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    f"SELECT * FROM {self.table_name} WHERE {filter_string}",
-                    filter_values,
-                )
-                if return_one_entity:
-                    return cur.fetchone()
-                return cur.fetchall()
+        return self._execute(
+            query=f"SELECT * FROM {self.table_name} WHERE {filter_string}",
+            params=filter_values,
+            return_one_entity=return_one_entity,
+        )
 
     def get(self, filter_parameters: dict[str, Any]) -> Row | None:
         if len(filter_parameters) != 1:
@@ -48,24 +44,22 @@ class BaseModel(abc.ABC):
         column_values: dict[str, Any],
         check_exists: bool = False,
     ) -> Row | None:
-        with get_db_connection() as conn:
-            with conn.cursor() as cur:
-                if check_exists:
-                    existing_entity = self.check_exists_before_insert()
-                    if existing_entity:
-                        return existing_entity
+        if check_exists:
+            existing_entity = self.check_exists_before_insert()
+            if existing_entity:
+                return existing_entity
 
-                columns = ", ".join(column_values.keys())
-                cur.execute(
-                    (
-                        f"INSERT INTO {self.table_name} ({columns}) "
-                        "VALUES (%s) RETURNING id"
-                    ),
-                    tuple(column_values.values()),
-                )
-                entity_id = cur.fetchone()["id"]
-                conn.commit()
-                return self.get({"id": entity_id})
+        columns = ", ".join(column_values.keys())
+
+        entity_id = self._execute(
+            query=(
+                f"INSERT INTO {self.table_name} ({columns}) "
+                "VALUES (%s) RETURNING id"
+            ),
+            params=tuple(column_values.values()),
+        )["id"]
+
+        return self.get({"id": entity_id})
 
     def get_all(
         self,
@@ -78,10 +72,28 @@ class BaseModel(abc.ABC):
             order_by_string += ", ".join(order_by)
             if not order_asc:
                 order_by_string += " DESC"
+        return self._execute(
+            query=f"SELECT * FROM {self.table_name}{order_by_string}",
+            return_one_entity=False,
+        )
 
+    def _execute(
+        self,
+        *,
+        query: str,
+        params: tuple = tuple(),
+        return_one_entity: bool = True,
+    ) -> list[Row] | Row | None:
+        """Единая точка входа для выполнения запросов."""
         with get_db_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute(
-                    f"SELECT * FROM {self.table_name}{order_by_string}"
-                )
+                cur.execute(query, params)
+
+                if query.strip().upper().startswith(
+                    ("INSERT", "UPDATE", "DELETE")
+                ):
+                    conn.commit()
+
+                if return_one_entity:
+                    return cur.fetchone()
                 return cur.fetchall()
