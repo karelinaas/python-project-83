@@ -52,17 +52,17 @@ def add_url() -> Response | str:
     
     # Проверка на существование (с нормализацией)
     parsed = urlparse(url)
-    normalized_name = f"{parsed.scheme}://{parsed.netloc}"
+    normalized_name = f"{parsed.netloc}{parsed.path}"
     existing_url = URL.find_by_name(normalized_name)
     if existing_url:
         flash("Страница уже существует", "info")
-        return redirect(url_for("show_url", id=existing_url["id"]))
+        return redirect(url_for("show_url", url_id=existing_url["id"]))
     
     # Создание нового URL
     new_url = URL.create(normalized_name)
     if new_url:
         flash("Страница успешно добавлена", "success")
-        return redirect(url_for("show_url", id=new_url["id"]))
+        return redirect(url_for("show_url", url_id=new_url["id"]))
     else:
         flash("Не удалось добавить страницу", "danger")
         return render_template("index.html"), 422
