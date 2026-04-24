@@ -3,3 +3,13 @@ CREATE TABLE urls (
     name VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE url_checks (
+    id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    url_id BIGINT NOT NULL REFERENCES urls(id) ON DELETE CASCADE,
+    status_code SMALLINT CHECK (status_code >= 0 AND status_code <= 999),
+    h1 VARCHAR(1000),
+    title VARCHAR(1000),
+    description VARCHAR(1000),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

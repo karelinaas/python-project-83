@@ -14,7 +14,7 @@ from flask import (
 
 from page_analyzer.models import URL
 
-urls = Blueprint("urls", __name__)
+urls = Blueprint("urls", __name__, template_folder="templates")
 
 
 @urls.app_context_processor
