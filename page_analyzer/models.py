@@ -32,17 +32,10 @@ class URL:
     @staticmethod
     def create(name: str) -> psycopg.rows.Row | None:
         """Создать новый URL"""
-        # Нормализуем имя сайта
-        parsed = urlparse(name)
-        normalized_name = f"{parsed.scheme}://{parsed.netloc}"
-        
         with get_db_connection() as conn:
             with conn.cursor() as cur:
                 # Проверяем, существует ли уже такой URL
-                cur.execute(
-                    "SELECT * FROM urls WHERE name = %s",
-                    (normalized_name,),
-                )
+                cur.execute("SELECT * FROM urls WHERE name = %s", (name,))
                 existing = cur.fetchone()
                 if existing:
                     return existing
@@ -50,7 +43,7 @@ class URL:
                 # Создаем новую запись
                 cur.execute(
                     "INSERT INTO urls (name) VALUES (%s) RETURNING id",
-                    (normalized_name,)
+                    (name,)
                 )
                 url_id = cur.fetchone()['id']
                 conn.commit()

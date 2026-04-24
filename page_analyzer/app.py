@@ -32,7 +32,7 @@ def index() -> str:
 
 
 @app.post("/urls")
-def add_url() -> Response | str:
+def add_url() -> Response | str | tuple[str, int]:
     url = request.form.get("url", "").strip()
     
     # Валидация
