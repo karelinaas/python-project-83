@@ -1,8 +1,12 @@
 import os
 from datetime import datetime
+from urllib.parse import urlparse
 
+import validators
 from dotenv import load_dotenv
-from flask import Flask, render_template
+from flask import Flask, flash, redirect, render_template, request, url_for
+
+from .models import URL
 
 load_dotenv()
 app = Flask(__name__)
@@ -14,9 +18,61 @@ def inject_now():
     return {"now": datetime.now()}
 
 
-@app.route('/')
+@app.route("/")
 def index():
     return render_template("index.html")
+
+
+@app.post("/urls")
+def add_url():
+    url = request.form.get("url", "").strip()
+    
+    # Валидация
+    errors = []
+    
+    if not url:
+        errors.append("URL не может быть пустым")
+    elif len(url) > 255:
+        errors.append("URL не должен превышать 255 символов")
+    elif not validators.url(url):
+        errors.append("Некорректный URL")
+    
+    if errors:
+        for error in errors:
+            flash(error, "danger")
+        return render_template("index.html"), 422
+    
+    # Проверка на существование (с нормализацией)
+    parsed = urlparse(url)
+    normalized_name = f"{parsed.scheme}://{parsed.netloc}"
+    existing_url = URL.find_by_name(normalized_name)
+    if existing_url:
+        flash("Страница уже существует", "info")
+        return redirect(url_for("show_url", id=existing_url["id"]))
+    
+    # Создание нового URL
+    new_url = URL.create(normalized_name)
+    if new_url:
+        flash("Страница успешно добавлена", "success")
+        return redirect(url_for("show_url", id=new_url["id"]))
+    else:
+        flash("Не удалось добавить страницу", "danger")
+        return render_template("index.html"), 422
+
+
+@app.get("/urls")
+def urls_list():
+    urls = URL.get_all()
+    return render_template("urls.html", urls=urls)
+
+
+@app.get("/urls/<int:id>")
+def show_url(id):
+    url = URL.find_by_id(id)
+    if not url:
+        flash("Страница не найдена", "danger")
+        return redirect(url_for("urls_list"))
+    return render_template("url.html", url=url)
 
 
 if __name__ == "__main__":
