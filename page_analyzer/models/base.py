@@ -31,10 +31,8 @@ class BaseModel(abc.ABC):
             return_one_entity=return_one_entity,
         )
 
-    def get(self, filter_parameters: dict[str, Any]) -> Row | None:
-        if len(filter_parameters) != 1:
-            raise Exception("Method support only one filter parameter")
-        return self.filter(filter_parameters, return_one_entity=True)
+    def get(self, value: Any, column: str = "id") -> Row | None:
+        return self.filter({column: value}, return_one_entity=True)
 
     def create(
         self,
@@ -56,6 +54,7 @@ class BaseModel(abc.ABC):
 
     def get_all(
         self,
+        *,
         order_by: tuple[str] | None = None,
         order_asc: bool = True,
     ) -> list[Row] | None:
@@ -99,8 +98,15 @@ class UniqueModel(BaseModel):
     def check_exists_before_insert(self, *args, **kwargs) -> Row | None:
         raise NotImplementedError
 
-    def create(self, column_values: dict[str, Any], *args, **kwargs) -> Row | None:
-        existing_entity = self.check_exists_before_insert(*args, **kwargs)
-        if existing_entity:
-            return existing_entity
+    def create(
+        self,
+        column_values: dict[str, Any],
+        check_existing_entity: bool = True,
+        *args,
+        **kwargs,
+    ) -> Row | None:
+        if check_existing_entity:
+            existing_entity = self.check_exists_before_insert(*args, **kwargs)
+            if existing_entity:
+                return existing_entity
         return super().create(column_values)

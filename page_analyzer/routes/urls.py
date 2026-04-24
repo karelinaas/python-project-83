@@ -49,13 +49,13 @@ def add_url() -> Response | str | tuple[str, int]:
     # Проверка на существование (с нормализацией)
     parsed = urlparse(url)
     normalized_name = f"{parsed.netloc}{parsed.path}"
-    existing_url = URL.find_by_name(normalized_name)
+    existing_url = URL().check_exists_before_insert(normalized_name)
     if existing_url:
         flash("Страница уже существует", "info")
         return redirect(url_for("urls.show_url", url_id=existing_url["id"]))
 
     # Создание нового URL
-    new_url = URL.create(normalized_name)
+    new_url = URL().create({"name": normalized_name}, check_existing_entity=False)
     if new_url:
         flash("Страница успешно добавлена", "success")
         return redirect(url_for("urls.show_url", url_id=new_url["id"]))
@@ -66,13 +66,13 @@ def add_url() -> Response | str | tuple[str, int]:
 
 @urls.get("/urls")
 def urls_list() -> str:
-    urls = URL.get_all()
-    return render_template("urls.html", urls=urls)
+    url_items = URL().get_all(order_by=("created_at",), order_asc=False)
+    return render_template("urls.html", urls=url_items)
 
 
 @urls.get("/urls/<int:url_id>")
 def show_url(url_id: int) -> Response | str:
-    url = URL.find_by_id(url_id)
+    url = URL().get(url_id)
     if not url:
         flash("Страница не найдена", "danger")
         return redirect(url_for("urls.urls_list"))
@@ -83,7 +83,7 @@ def show_url(url_id: int) -> Response | str:
 
 @urls.post("/urls/<int:url_id>/checks")
 def create_check(url_id: int) -> Response | str:
-    url = URL.find_by_id(url_id)
+    url = URL().get(url_id)
     if not url:
         flash("Страница не найдена", "danger")
         return redirect(url_for("urls.urls_list"))
