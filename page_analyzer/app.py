@@ -13,9 +13,11 @@ app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
 def inject_now():
     return {"now": datetime.now()}
 
+
 @app.route('/')
 def index():
     return render_template("index.html")
+
 
 if __name__ == "__main__":
     app.run()
