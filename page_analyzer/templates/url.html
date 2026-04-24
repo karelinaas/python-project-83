@@ -1,9 +1,11 @@
 {% extends "base.html" %}
 
+{% set page_title = "Сайты" %}
+
 {% block content %}
 <div class="row">
     <div class="col-12">
-        <h1>Сайт #{{ url.id }}</h1>
+        <h1>Сайт https://{{ url.name }}</h1>
         <div class="table-responsive">
             <table class="table table-bordered" data-test="url">
                 <tbody>
@@ -16,13 +18,33 @@
                         <td>{{ url.name }}</td>
                     </tr>
                     <tr>
-                        <th>Дата добавления</th>
+                        <th>Дата создания</th>
                         <td>{{ url.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
                     </tr>
                 </tbody>
             </table>
         </div>
+
         <a href="{{ url_for('urls_list') }}" class="btn btn-secondary">К списку сайтов</a>
+
+        <h2>Проверки</h2>
+        <button type="button" class="btn btn-primary">Запустить проверку</button>
+
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <tbody>
+                    <tr>
+                        <th>ID</th>
+                        <th>Код ответа</th>
+                        <th>h1</th>
+                        <th>title</th>
+                        <th>description</th>
+                        <th>Дата создания</th>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
     </div>
 </div>
 {% endblock %}

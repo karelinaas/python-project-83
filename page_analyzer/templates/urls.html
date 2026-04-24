@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
+{% set page_title = "Сайты" %}
+
 {% block content %}
 <div class="row">
     <div class="col-12">
@@ -10,7 +12,8 @@
                     <tr>
                         <th>ID</th>
                         <th>Имя</th>
-                        <th>Дата добавления</th>
+                        <th>Последняя проверка</th>
+                        <th>Код ответа</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -18,9 +21,10 @@
                     <tr>
                         <td>{{ url.id }}</td>
                         <td>
-                            <a href="{{ url_for('show_url', url_id=url.id) }}">{{ url.name }}</a>
+                            <a href="{{ url_for('show_url', url_id=url.id) }}">https://{{ url.name }}</a>
                         </td>
-                        <td>{{ url.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        <td></td>
+                        <td></td>
                     </tr>
                     {% endfor %}
                 </tbody>
