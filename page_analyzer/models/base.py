@@ -12,9 +12,6 @@ class BaseModel(abc.ABC):
     def table_name(self) -> str:
         raise NotImplementedError
 
-    def check_exists_before_insert(self, *args, **kwargs) -> Row | None:
-        raise NotImplementedError
-
     def filter(
         self,
         filter_parameters: dict[str, Any],
@@ -42,13 +39,9 @@ class BaseModel(abc.ABC):
     def create(
         self,
         column_values: dict[str, Any],
-        check_exists: bool = False,
+        *_,
+        **__,
     ) -> Row | None:
-        if check_exists:
-            existing_entity = self.check_exists_before_insert()
-            if existing_entity:
-                return existing_entity
-
         columns = ", ".join(column_values.keys())
 
         entity_id = self._execute(
@@ -97,3 +90,17 @@ class BaseModel(abc.ABC):
                 if return_one_entity:
                     return cur.fetchone()
                 return cur.fetchall()
+
+
+class UniqueModel(BaseModel):
+    table_name: str
+
+    @abc.abstractmethod
+    def check_exists_before_insert(self, *args, **kwargs) -> Row | None:
+        raise NotImplementedError
+
+    def create(self, column_values: dict[str, Any], *args, **kwargs) -> Row | None:
+        existing_entity = self.check_exists_before_insert(*args, **kwargs)
+        if existing_entity:
+            return existing_entity
+        return super().create(column_values)
