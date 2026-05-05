@@ -1,4 +1,5 @@
 import os
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -7,11 +8,8 @@ from page_analyzer.app import app
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_test_environment():
-    """Set up test environment for all tests."""
-    # Set test environment
     os.environ["TESTING"] = "true"
     yield
-    # Cleanup if needed
     if "TESTING" in os.environ:
         del os.environ["TESTING"]
 
@@ -30,7 +28,7 @@ def client():
 
 @pytest.fixture
 def sample_html_content():
-    """Пример HTML контента для тестов."""
+    """Пример HTML-контента для тестов."""
     return """
     <html>
     <head>
@@ -47,7 +45,7 @@ def sample_html_content():
 
 @pytest.fixture
 def sample_html_without_seo():
-    """HTML контент без SEO тегов для тестов."""
+    """HTML-контент без SEO тегов для тестов."""
     return """
     <html>
     <head>

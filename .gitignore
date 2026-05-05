@@ -6,3 +6,4 @@
 .coverage
 .python-version
 coverage.xml
+my_database.db
