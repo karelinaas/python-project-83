@@ -25,3 +25,13 @@ stop:
 	@lsof -t -i :$(PORT) | xargs kill -9 || true
 
 restart: stop start
+
+test:
+	uv run pytest
+
+test-cov:
+	uv run pytest --cov=page_analyzer --cov-report=term-missing --cov-report=html
+
+test-clean:
+	rm -rf htmlcov/
+	rm -f .coverage

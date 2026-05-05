@@ -1,0 +1,277 @@
+import pytest
+from unittest.mock import MagicMock, patch
+from page_analyzer.models import URL, UrlCheck
+
+
+class TestBaseModel:
+    """Тесты для базовой модели."""
+
+    def test_filter_single_condition(self, mock_db_connection):
+        """Тест фильтрации с одним условием."""
+        mock_conn, mock_cursor = mock_db_connection
+        
+        url_model = URL()
+        mock_cursor.fetchone.return_value = {"id": 1, "name": "example.com"}
+        
+        result = url_model.filter({"name": "example.com"}, return_one_entity=True)
+        
+        assert result == {"id": 1, "name": "example.com"}
+        mock_cursor.execute.assert_called_once_with(
+            "SELECT * FROM urls WHERE name = %s",
+            ("example.com",)
+        )
+
+    def test_filter_multiple_conditions(self, mock_db_connection):
+        """Тест фильтрации с несколькими условиями."""
+        mock_conn, mock_cursor = mock_db_connection
+        
+        url_model = URL()
+        mock_cursor.fetchall.return_value = [
+            {"id": 1, "name": "example.com"},
+            {"id": 2, "name": "test.com"}
+        ]
+        
+        result = url_model.filter({"name": "example.com", "id": 1})
+        
+        assert len(result) == 2
+        mock_cursor.execute.assert_called_once_with(
+            "SELECT * FROM urls WHERE name = %s AND id = %s",
+            ("example.com", 1)
+        )
+
+    def test_get_by_id(self, mock_db_connection):
+        """Тест получения записи по ID."""
+        mock_conn, mock_cursor = mock_db_connection
+        
+        url_model = URL()
+        mock_cursor.fetchone.return_value = {"id": 1, "name": "example.com"}
+        
+        result = url_model.get(1)
+        
+        assert result == {"id": 1, "name": "example.com"}
+        mock_cursor.execute.assert_called_once_with(
+            "SELECT * FROM urls WHERE id = %s",
+            (1,)
+        )
+
+    def test_get_by_column(self, mock_db_connection):
+        """Тест получения записи по другому столбцу."""
+        mock_conn, mock_cursor = mock_db_connection
+        
+        url_model = URL()
+        mock_cursor.fetchone.return_value = {"id": 1, "name": "example.com"}
+        
+        result = url_model.get("example.com", column="name")
+        
+        assert result == {"id": 1, "name": "example.com"}
+        mock_cursor.execute.assert_called_once_with(
+            "SELECT * FROM urls WHERE name = %s",
+            ("example.com",)
+        )
+
+    def test_create_success(self, mock_db_connection):
+        """Тест успешного создания записи."""
+        mock_conn, mock_cursor = mock_db_connection
+        
+        url_model = URL()
+        # Мокируем RETURNING id и последующий get
+        mock_cursor.fetchone.side_effect = [
+            {"id": 1},  # RETURNING id
+            {"id": 1, "name": "example.com", "created_at": "2023-01-01"}  # get()
+        ]
+        
+        result = url_model.create({"name": "example.com"})
+        
+        assert result == {"id": 1, "name": "example.com", "created_at": "2023-01-01"}
+        
+        # Проверяем вызовы
+        calls = mock_cursor.execute.call_args_list
+        assert len(calls) == 2
+        assert "INSERT INTO urls" in str(calls[0][0][0])
+        assert "SELECT * FROM urls WHERE id = %s" in str(calls[1][0][0])
+
+    def test_get_all_default(self, mock_db_connection):
+        """Тест получения всех записей без сортировки."""
+        mock_conn, mock_cursor = mock_db_connection
+        
+        url_model = URL()
+        mock_cursor.fetchall.return_value = [
+            {"id": 1, "name": "example.com"},
+            {"id": 2, "name": "test.com"}
+        ]
+        
+        result = url_model.get_all()
+        
+        assert len(result) == 2
+        mock_cursor.execute.assert_called_once_with("SELECT * FROM urls")
+
+    def test_get_all_with_ordering(self, mock_db_connection):
+        """Тест получения всех записей с сортировкой."""
+        mock_conn, mock_cursor = mock_db_connection
+        
+        url_model = URL()
+        mock_cursor.fetchall.return_value = [
+            {"id": 2, "name": "test.com"},
+            {"id": 1, "name": "example.com"}
+        ]
+        
+        result = url_model.get_all(order_by=("created_at",), order_asc=False)
+        
+        assert len(result) == 2
+        mock_cursor.execute.assert_called_once_with(
+            "SELECT * FROM urls ORDER BY created_at DESC"
+        )
+
+    def test_get_all_multiple_ordering(self, mock_db_connection):
+        """Тест получения всех записей с множественной сортировкой."""
+        mock_conn, mock_cursor = mock_db_connection
+        
+        url_model = URL()
+        mock_cursor.fetchall.return_value = []
+        
+        url_model.get_all(order_by=("name", "created_at"), order_asc=True)
+        
+        mock_cursor.execute.assert_called_once_with(
+            "SELECT * FROM urls ORDER BY name, created_at"
+        )
+
+    def test_database_exception_handling(self, mock_db_connection):
+        """Тест обработки исключений базы данных."""
+        mock_conn, mock_cursor = mock_db_connection
+        
+        url_model = URL()
+        mock_cursor.execute.side_effect = Exception("Database error")
+        
+        with pytest.raises(Exception, match="Database error"):
+            url_model.get(1)
+        
+        # Проверяем, что rollback был вызван
+        mock_conn.rollback.assert_called_once()
+
+
+class TestURLModel:
+    """Тесты для модели URL."""
+
+    def test_table_name(self):
+        """Тест имени таблицы."""
+        url_model = URL()
+        assert url_model.table_name == "urls"
+
+    def test_check_exists_before_insert_success(self, mock_db_connection):
+        """Тест проверки существования URL перед вставкой."""
+        mock_conn, mock_cursor = mock_db_connection
+        
+        url_model = URL()
+        mock_cursor.fetchone.return_value = {"id": 1, "name": "example.com"}
+        
+        result = url_model.check_exists_before_insert({"name": "example.com"})
+        
+        assert result == {"id": 1, "name": "example.com"}
+        mock_cursor.execute.assert_called_once_with(
+            "SELECT * FROM urls WHERE name = %s",
+            ("example.com",)
+        )
+
+    def test_check_exists_before_insert_not_found(self, mock_db_connection):
+        """Тест проверки несуществующего URL."""
+        mock_conn, mock_cursor = mock_db_connection
+        
+        url_model = URL()
+        mock_cursor.fetchone.return_value = None
+        
+        result = url_model.check_exists_before_insert({"name": "nonexistent.com"})
+        
+        assert result is None
+
+    def test_check_exists_before_insert_no_name(self, mock_db_connection):
+        """Тест проверки без поля name."""
+        url_model = URL()
+        
+        with pytest.raises(Exception, match="Model is unique by name"):
+            url_model.check_exists_before_insert({"url": "example.com"})
+
+    def test_create_with_existing_check(self, mock_db_connection):
+        """Тест создания с проверкой существования."""
+        mock_conn, mock_cursor = mock_db_connection
+        
+        url_model = URL()
+        # Мокируем существующий URL
+        mock_cursor.fetchone.return_value = {"id": 1, "name": "example.com"}
+        
+        result = url_model.create({"name": "example.com"}, check_existing_entity=True)
+        
+        assert result == {"id": 1, "name": "example.com"}
+        # Должен быть только один вызов (проверка существования)
+        mock_cursor.execute.assert_called_once()
+
+    def test_create_without_existing_check(self, mock_db_connection):
+        """Тест создания без проверки существования."""
+        mock_conn, mock_cursor = mock_db_connection
+        
+        url_model = URL()
+        # Мокируем создание нового URL
+        mock_cursor.fetchone.side_effect = [
+            {"id": 1},  # RETURNING id
+            {"id": 1, "name": "example.com", "created_at": "2023-01-01"}  # get()
+        ]
+        
+        result = url_model.create({"name": "example.com"}, check_existing_entity=False)
+        
+        assert result == {"id": 1, "name": "example.com", "created_at": "2023-01-01"}
+        # Должны быть два вызова (INSERT и SELECT)
+        assert mock_cursor.execute.call_count == 2
+
+
+class TestUrlCheckModel:
+    """Тесты для модели UrlCheck."""
+
+    def test_table_name(self):
+        """Тест имени таблицы."""
+        check_model = UrlCheck()
+        assert check_model.table_name == "url_checks"
+
+    def test_create_url_check(self, mock_db_connection):
+        """Тест создания проверки URL."""
+        mock_conn, mock_cursor = mock_db_connection
+        
+        check_model = UrlCheck()
+        mock_cursor.fetchone.side_effect = [
+            {"id": 1},  # RETURNING id
+            {"id": 1, "url_id": 1, "status_code": 200, "h1": "Test", "title": "Test", "description": "Test"}
+        ]
+        
+        result = check_model.create({
+            "url_id": 1,
+            "status_code": 200,
+            "h1": "Test",
+            "title": "Test",
+            "description": "Test"
+        })
+        
+        assert result["url_id"] == 1
+        assert result["status_code"] == 200
+        assert result["h1"] == "Test"
+        
+        # Проверяем SQL запрос
+        calls = mock_cursor.execute.call_args_list
+        insert_call = calls[0]
+        assert "INSERT INTO url_checks" in str(insert_call[0][0])
+        assert "url_id, status_code, h1, title, description" in str(insert_call[0][0])
+
+    def test_filter_url_checks_by_url_id(self, mock_db_connection):
+        """Тест фильтрации проверок по URL ID."""
+        mock_conn, mock_cursor = mock_db_connection
+        
+        check_model = UrlCheck()
+        mock_cursor.fetchall.return_value = [
+            {"id": 1, "url_id": 1, "status_code": 200},
+            {"id": 2, "url_id": 1, "status_code": 201}
+        ]
+        
+        result = check_model.filter({"url_id": 1})
+        
+        assert len(result) == 2
+        mock_cursor.execute.assert_called_once_with(
+            "SELECT * FROM url_checks WHERE url_id = %s",
+            (1,)
+        )
