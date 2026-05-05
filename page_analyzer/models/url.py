@@ -16,7 +16,10 @@ class URL(UniqueModel):
             raise Exception("Model is unique by name")
 
         return self._execute(
-            query=f"SELECT * FROM {self.table_name} WHERE name = %s",
+            query=(
+                f"SELECT * FROM {self.table_name} "
+                f"WHERE name = {self.PLACEHOLDER}"
+            ),
             params=(column_values["name"],),
             return_one_entity=True,
         )

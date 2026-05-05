@@ -13,25 +13,20 @@ class TestRoutes:
         assert response.status_code == 200
         assert b"<!DOCTYPE html>" in response.data
 
-    def test_add_url_success(self, client, mock_db_connection):
+    def test_add_url_success(self, client):
         """Тест успешного добавления нового URL."""
-        mock_conn, mock_cursor = mock_db_connection
-        
-        mock_cursor.fetchone.side_effect = [
-            None, {"id": 1, "name": "example.com"},
-        ]
-        
         response = client.post("/urls", data={"url": "https://example.com"})
         
         assert response.status_code == 302
         assert response.location.endswith("/urls/1")
 
-    def test_add_url_existing(self, client, mock_db_connection):
+    def test_add_url_existing(self, client):
         """Тест добавления существующего URL."""
-        mock_conn, mock_cursor = mock_db_connection
+        # First add a URL
+        url_model = URL()
+        url_model.create({"name": "example.com"}, check_existing_entity=False)
         
-        mock_cursor.fetchone.return_value = {"id": 1, "name": "example.com"}
-        
+        # Try to add the same URL again
         response = client.post("/urls", data={"url": "https://example.com"})
         
         assert response.status_code == 302
@@ -59,58 +54,41 @@ class TestRoutes:
         assert response.status_code == 422
         assert "Некорректный URL" in response.data.decode('utf-8')
 
-    def test_urls_list(self, client, mock_db_connection):
+    def test_urls_list(self, client):
         """Тест отображения списка URL."""
-        mock_conn, mock_cursor = mock_db_connection
-        
-        mock_cursor.fetchall.return_value = [
-            {"id": 1, "name": "example.com", "created_at": "2023-01-01"},
-            {"id": 2, "name": "test.com", "created_at": "2023-01-02"}
-        ]
+        # Create some test URLs
+        url_model = URL()
+        url_model.create({"name": "example.com"}, check_existing_entity=False)
+        url_model.create({"name": "test.com"}, check_existing_entity=False)
         
         response = client.get("/urls")
         
-        assert mock_cursor.fetchall.called
         assert response.status_code == 200
         assert b"example.com" in response.data
         assert b"test.com" in response.data
 
-    def test_show_url_success(self, client, mock_db_connection):
+    def test_show_url_success(self, client):
         """Тест отображения конкретного URL."""
-        mock_conn, mock_cursor = mock_db_connection
+        # Create a test URL
+        url_model = URL()
+        url = url_model.create({"name": "example.com"}, check_existing_entity=False)
         
-        mock_cursor.fetchone.side_effect = [
-            {"id": 1, "name": "example.com", "created_at": "2023-01-01"},
-            {
-                "id": 1,
-                "url_id": 1,
-                "status_code": 200,
-                "h1": "Test",
-                "title": "Test",
-                "description": "Test",
-            },
-        ]
-        mock_cursor.fetchall.return_value = [
-            {
-                "id": 1,
-                "url_id": 1,
-                "status_code": 200,
-                "h1": "Test",
-                "title": "Test",
-                "description": "Test",
-            },
-        ]
+        # Create a check for this URL
+        check_model = UrlCheck()
+        check_model.create({
+            "url_id": url["id"],
+            "status_code": 200,
+            "h1": "Test",
+            "title": "Test",
+            "description": "Test"
+        })
         
-        response = client.get("/urls/1")
+        response = client.get(f"/urls/{url['id']}")
         
         assert response.status_code == 302
 
-    def test_show_url_not_found(self, client, mock_db_connection):
+    def test_show_url_not_found(self, client):
         """Тест отображения несуществующего URL."""
-        mock_conn, mock_cursor = mock_db_connection
-        
-        mock_cursor.fetchone.return_value = None
-        
         response = client.get("/urls/999")
         
         assert response.status_code == 302
@@ -121,11 +99,12 @@ class TestRoutes:
         self,
         mock_get,
         client,
-        mock_db_connection,
         sample_html_content,
     ):
         """Тест успешной проверки URL."""
-        mock_conn, mock_cursor = mock_db_connection
+        # Create a test URL
+        url_model = URL()
+        url = url_model.create({"name": "example.com"}, check_existing_entity=False)
         
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -133,22 +112,10 @@ class TestRoutes:
         mock_response.raise_for_status.return_value = None
         mock_get.return_value = mock_response
         
-        mock_cursor.fetchone.side_effect = [
-            {"id": 1, "name": "example.com", "created_at": "2023-01-01"},
-            {
-                "id": 1,
-                "url_id": 1,
-                "status_code": 200,
-                "h1": "Test H1 Header",
-                "title": "Test Page Title",
-                "description": "Test page description",
-            },
-        ]
-        
-        response = client.post("/urls/1/checks")
+        response = client.post(f"/urls/{url['id']}/checks")
         
         assert response.status_code == 302
-        assert response.location.endswith("/urls/1")
+        assert response.location.endswith(f"/urls/{url['id']}")
         mock_get.assert_called_once_with("https://example.com", timeout=10)
 
     @patch("requests.get")
@@ -156,30 +123,21 @@ class TestRoutes:
         self,
         mock_get,
         client,
-        mock_db_connection,
     ):
         """Тест обработки исключения при запросе."""
-        mock_conn, mock_cursor = mock_db_connection
+        # Create a test URL
+        url_model = URL()
+        url = url_model.create({"name": "example.com"}, check_existing_entity=False)
         
         mock_get.side_effect = Exception("Network error")
         
-        mock_cursor.fetchone.return_value = {
-            "id": 1,
-            "name": "example.com",
-            "created_at": "2023-01-01",
-        }
-        
-        response = client.post("/urls/1/checks")
+        response = client.post(f"/urls/{url['id']}/checks")
         
         assert response.status_code == 302
-        assert response.location.endswith("/urls/1")
+        assert response.location.endswith(f"/urls/{url['id']}")
 
-    def test_create_check_url_not_found(self, client, mock_db_connection):
+    def test_create_check_url_not_found(self, client):
         """Тест проверки несуществующего URL."""
-        mock_conn, mock_cursor = mock_db_connection
-        
-        mock_cursor.fetchone.return_value = None
-        
         response = client.post("/urls/999/checks")
         
         assert response.status_code == 302
@@ -190,34 +148,23 @@ class TestRoutes:
         self,
         mock_get,
         client,
-        mock_db_connection,
     ):
         """Тест обработки HTTP ошибки."""
-        mock_conn, mock_cursor = mock_db_connection
+        # Create a test URL
+        url_model = URL()
+        url = url_model.create({"name": "example.com"}, check_existing_entity=False)
         
         mock_response = MagicMock()
         mock_response.raise_for_status.side_effect = Exception("HTTP Error")
         mock_get.return_value = mock_response
         
-        mock_cursor.fetchone.return_value = {
-            "id": 1,
-            "name": "example.com",
-            "created_at": "2023-01-01",
-        }
-        
-        response = client.post("/urls/1/checks")
+        response = client.post(f"/urls/{url['id']}/checks")
         
         assert response.status_code == 302
-        assert response.location.endswith("/urls/1")
+        assert response.location.endswith(f"/urls/{url['id']}")
 
-    def test_url_normalization(self, client, mock_db_connection):
+    def test_url_normalization(self, client):
         """Тест нормализации URL при добавлении."""
-        mock_conn, mock_cursor = mock_db_connection
-        
-        mock_cursor.fetchone.side_effect = [
-            None, {"id": 1, "name": "example.com/path"},
-        ]
-        
         response = client.post(
             "/urls",
             data={"url": "https://example.com/path?query=param#fragment"},

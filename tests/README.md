@@ -43,10 +43,13 @@ uv run pytest -m unit
 
 ### Фикстуры
 - `client` - Flask тестовый клиент
-- `mock_db_connection` - Мок подключения к базе данных
+- `test_db` - Тестовая база данных SQLite
 - `sample_html_content` - Пример HTML для тестов SEO анализатора
 - `sample_html_without_seo` - HTML без SEO тегов
 - `mock_requests_response` - Мок ответа от requests
+
+### Тестовая база данных
+Для тестов используется in-memory база данных SQLite со схемой, определенной в `test_database.sql`. Это позволяет проводить интеграционные тесты без зависимости от внешней базы данных PostgreSQL.
 
 ### Покрытие тестами
 

@@ -1,8 +1,19 @@
-from unittest.mock import MagicMock, patch
+import os
 
 import pytest
 
 from page_analyzer.app import app
+
+
+@pytest.fixture(scope="session", autouse=True)
+def setup_test_environment():
+    """Set up test environment for all tests."""
+    # Set test environment
+    os.environ["TESTING"] = "true"
+    yield
+    # Cleanup if needed
+    if "TESTING" in os.environ:
+        del os.environ["TESTING"]
 
 
 @pytest.fixture
@@ -15,21 +26,6 @@ def client():
     with app.test_client() as client:
         with app.app_context():
             yield client
-
-
-@pytest.fixture
-def mock_db_connection():
-    """Мокирует подключение к базе данных."""
-    mock_conn = MagicMock()
-    mock_cursor = MagicMock()
-    mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
-    mock_conn.cursor.return_value.__exit__.return_value = None
-    
-    with patch(
-        "page_analyzer.config.database.get_db_connection",
-        return_value=mock_conn,
-    ):
-        yield mock_conn, mock_cursor
 
 
 @pytest.fixture

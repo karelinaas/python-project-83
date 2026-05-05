@@ -1,4 +1,6 @@
 import abc
+import os
+from contextlib import closing
 from typing import Any
 
 from psycopg.rows import Row
@@ -7,6 +9,12 @@ from page_analyzer.config.database import get_db_connection
 
 
 class BaseModel(abc.ABC):
+    PLACEHOLDER = "%s"
+
+    def __init__(self):
+        if os.getenv("TESTING") == "true":
+            self.PLACEHOLDER = "?"
+
     @property
     @abc.abstractmethod
     def table_name(self) -> str:
@@ -21,7 +29,7 @@ class BaseModel(abc.ABC):
         filter_values = tuple()
 
         for key, value in filter_parameters.items():
-            filter_string += f"{key} = %s AND "
+            filter_string += f"{key} = {self.PLACEHOLDER} AND "
             filter_values += (value,)
         filter_string = filter_string.rstrip(" AND ")
 
@@ -41,7 +49,9 @@ class BaseModel(abc.ABC):
         **__,
     ) -> Row | None:
         columns = ", ".join(column_values.keys())
-        values_placeholders = ", ".join(["%s"] * len(column_values))
+        values_placeholders = ", ".join(
+            [self.PLACEHOLDER] * len(column_values)
+        )
 
         entity_id = self._execute(
             query=(
@@ -80,12 +90,12 @@ class BaseModel(abc.ABC):
         """Единая точка входа для выполнения запросов."""
         with get_db_connection() as conn:
             try:
-                with conn.cursor() as cur:
+                with closing(conn.cursor()) as cur:
                     cur.execute(query, params)
 
                     if query.strip().upper().startswith(
                         ("INSERT", "UPDATE", "DELETE")
-                    ):
+                    ) and os.getenv("TESTING") != "true":
                         conn.commit()
 
                     if return_one_entity:
@@ -94,8 +104,6 @@ class BaseModel(abc.ABC):
             except Exception as e:
                 conn.rollback()
                 raise e
-            finally:
-                conn.close()
 
 
 class UniqueModel(BaseModel):
