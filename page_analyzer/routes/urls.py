@@ -1,6 +1,7 @@
 from datetime import datetime
 from urllib.parse import urlparse
 
+import requests
 import validators
 from flask import (
     Blueprint,
@@ -91,10 +92,23 @@ def create_check(url_id: int) -> Response:
         flash("Страница не найдена", "danger")
         return redirect(url_for("urls.urls_list"))
     
-    check = UrlCheck().create({"url_id": url_id})
-    if check:
-        flash("Страница успешно проверена", "success")
-    else:
+    full_url = f"https://{url['name']}"
+    try:
+        response = requests.get(full_url, timeout=10)
+        response.raise_for_status()
+        status_code = response.status_code
+        
+        check = UrlCheck().create({
+            "url_id": url_id,
+            "status_code": status_code,
+        })
+        
+        if check:
+            flash("Страница успешно проверена", "success")
+        else:
+            flash("Произошла ошибка при проверке", "danger")
+            
+    except requests.exceptions.RequestException:
         flash("Произошла ошибка при проверке", "danger")
     
     return redirect(url_for("urls.show_url", url_id=url_id))

@@ -18,4 +18,5 @@ dependencies = [
     "psycopg>=3.3.3",
     "validators>=0.33.0",
     "psycopg-binary>=3.3.3",
+    "requests>=2.31.0",
 ]
