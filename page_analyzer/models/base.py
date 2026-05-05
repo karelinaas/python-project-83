@@ -41,11 +41,12 @@ class BaseModel(abc.ABC):
         **__,
     ) -> Row | None:
         columns = ", ".join(column_values.keys())
+        values_placeholders = ", ".join(["%s"] * len(column_values))
 
         entity_id = self._execute(
             query=(
                 f"INSERT INTO {self.table_name} ({columns}) "
-                "VALUES (%s) RETURNING id"
+                f"VALUES ({values_placeholders}) RETURNING id"
             ),
             params=tuple(column_values.values()),
         )["id"]

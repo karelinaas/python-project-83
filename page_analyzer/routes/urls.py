@@ -50,7 +50,7 @@ def add_url() -> Response | str | tuple[str, int]:
     # Проверка на существование (с нормализацией)
     parsed = urlparse(url)
     normalized_name = f"{parsed.netloc}{parsed.path}"
-    existing_url = URL().check_exists_before_insert(normalized_name)
+    existing_url = URL().check_exists_before_insert({"name": normalized_name})
     if existing_url:
         flash("Страница уже существует", "info")
         return redirect(url_for("urls.show_url", url_id=existing_url["id"]))
