@@ -8,9 +8,9 @@ from page_analyzer.app import app
 @pytest.fixture
 def client():
     """Создает тестовый клиент Flask приложения."""
-    app.config['TESTING'] = True
-    app.config['WTF_CSRF_ENABLED'] = False
-    app.config['SECRET_KEY'] = 'test-secret-key'
+    app.config["TESTING"] = True
+    app.config["WTF_CSRF_ENABLED"] = False
+    app.config["SECRET_KEY"] = "test-secret-key"
     
     with app.test_client() as client:
         with app.app_context():
@@ -25,7 +25,10 @@ def mock_db_connection():
     mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
     mock_conn.cursor.return_value.__exit__.return_value = None
     
-    with patch('page_analyzer.config.database.get_db_connection', return_value=mock_conn):
+    with patch(
+        "page_analyzer.config.database.get_db_connection",
+        return_value=mock_conn,
+    ):
         yield mock_conn, mock_cursor
 
 
@@ -65,6 +68,9 @@ def mock_requests_response():
     """Мокирует ответ от requests.get."""
     mock_response = MagicMock()
     mock_response.status_code = 200
-    mock_response.text = "<html><head><title>Test</title></head><body><h1>Header</h1></body></html>"
+    mock_response.text = (
+        "<html><head><title>Test</title></head><body>"
+        "<h1>Header</h1></body></html>"
+    )
     mock_response.raise_for_status.return_value = None
     return mock_response

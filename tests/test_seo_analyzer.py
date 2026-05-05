@@ -145,7 +145,9 @@ class TestSeoAnalyzer:
         <html>
         <head>
             <title>Тест &amp; Специальные символы</title>
-            <meta name="description" content="Описание с &quot;кавычками&quot;">
+            <meta 
+                name="description" content="Описание с &quot;кавычками&quot;"
+            >
         </head>
         <body>
             <h1>Заголовок с &lt;тегами&gt;</h1>

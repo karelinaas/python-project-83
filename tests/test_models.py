@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import MagicMock, patch
+
 from page_analyzer.models import URL, UrlCheck
 
 
@@ -13,7 +13,10 @@ class TestBaseModel:
         url_model = URL()
         mock_cursor.fetchone.return_value = {"id": 1, "name": "example.com"}
         
-        result = url_model.filter({"name": "example.com"}, return_one_entity=True)
+        result = url_model.filter(
+            {"name": "example.com"},
+            return_one_entity=True,
+        )
         
         assert result == {"id": 1, "name": "example.com"}
         mock_cursor.execute.assert_called_once_with(
@@ -74,17 +77,19 @@ class TestBaseModel:
         mock_conn, mock_cursor = mock_db_connection
         
         url_model = URL()
-        # Мокируем RETURNING id и последующий get
         mock_cursor.fetchone.side_effect = [
-            {"id": 1},  # RETURNING id
-            {"id": 1, "name": "example.com", "created_at": "2023-01-01"}  # get()
+            {"id": 1},
+            {"id": 1, "name": "example.com", "created_at": "2023-01-01"},
         ]
         
         result = url_model.create({"name": "example.com"})
         
-        assert result == {"id": 1, "name": "example.com", "created_at": "2023-01-01"}
+        assert result == {
+            "id": 1,
+            "name": "example.com",
+            "created_at": "2023-01-01",
+        }
         
-        # Проверяем вызовы
         calls = mock_cursor.execute.call_args_list
         assert len(calls) == 2
         assert "INSERT INTO urls" in str(calls[0][0][0])
@@ -145,7 +150,6 @@ class TestBaseModel:
         with pytest.raises(Exception, match="Database error"):
             url_model.get(1)
         
-        # Проверяем, что rollback был вызван
         mock_conn.rollback.assert_called_once()
 
 
@@ -179,7 +183,9 @@ class TestURLModel:
         url_model = URL()
         mock_cursor.fetchone.return_value = None
         
-        result = url_model.check_exists_before_insert({"name": "nonexistent.com"})
+        result = url_model.check_exists_before_insert(
+            {"name": "nonexistent.com"}
+        )
         
         assert result is None
 
@@ -195,13 +201,14 @@ class TestURLModel:
         mock_conn, mock_cursor = mock_db_connection
         
         url_model = URL()
-        # Мокируем существующий URL
         mock_cursor.fetchone.return_value = {"id": 1, "name": "example.com"}
         
-        result = url_model.create({"name": "example.com"}, check_existing_entity=True)
+        result = url_model.create(
+            {"name": "example.com"},
+            check_existing_entity=True,
+        )
         
         assert result == {"id": 1, "name": "example.com"}
-        # Должен быть только один вызов (проверка существования)
         mock_cursor.execute.assert_called_once()
 
     def test_create_without_existing_check(self, mock_db_connection):
@@ -209,16 +216,21 @@ class TestURLModel:
         mock_conn, mock_cursor = mock_db_connection
         
         url_model = URL()
-        # Мокируем создание нового URL
         mock_cursor.fetchone.side_effect = [
-            {"id": 1},  # RETURNING id
-            {"id": 1, "name": "example.com", "created_at": "2023-01-01"}  # get()
+            {"id": 1},
+            {"id": 1, "name": "example.com", "created_at": "2023-01-01"},
         ]
         
-        result = url_model.create({"name": "example.com"}, check_existing_entity=False)
+        result = url_model.create(
+            {"name": "example.com"},
+            check_existing_entity=False,
+        )
         
-        assert result == {"id": 1, "name": "example.com", "created_at": "2023-01-01"}
-        # Должны быть два вызова (INSERT и SELECT)
+        assert result == {
+            "id": 1,
+            "name": "example.com",
+            "created_at": "2023-01-01",
+        }
         assert mock_cursor.execute.call_count == 2
 
 
@@ -236,8 +248,15 @@ class TestUrlCheckModel:
         
         check_model = UrlCheck()
         mock_cursor.fetchone.side_effect = [
-            {"id": 1},  # RETURNING id
-            {"id": 1, "url_id": 1, "status_code": 200, "h1": "Test", "title": "Test", "description": "Test"}
+            {"id": 1},
+            {
+                "id": 1,
+                "url_id": 1,
+                "status_code": 200,
+                "h1": "Test",
+                "title": "Test",
+                "description": "Test",
+            },
         ]
         
         result = check_model.create({
@@ -252,11 +271,12 @@ class TestUrlCheckModel:
         assert result["status_code"] == 200
         assert result["h1"] == "Test"
         
-        # Проверяем SQL запрос
         calls = mock_cursor.execute.call_args_list
         insert_call = calls[0]
         assert "INSERT INTO url_checks" in str(insert_call[0][0])
-        assert "url_id, status_code, h1, title, description" in str(insert_call[0][0])
+        assert "url_id, status_code, h1, title, description" in str(
+            insert_call[0][0]
+        )
 
     def test_filter_url_checks_by_url_id(self, mock_db_connection):
         """Тест фильтрации проверок по URL ID."""
