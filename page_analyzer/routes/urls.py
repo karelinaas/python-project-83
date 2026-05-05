@@ -14,6 +14,7 @@ from flask import (
 )
 
 from page_analyzer.models import URL, UrlCheck
+from page_analyzer.seo_analyzer import extract_seo_tags
 
 urls = Blueprint("urls", __name__, template_folder="templates")
 
@@ -98,9 +99,14 @@ def create_check(url_id: int) -> Response:
         response.raise_for_status()
         status_code = response.status_code
         
+        seo_data = extract_seo_tags(response.text)
+        
         check = UrlCheck().create({
             "url_id": url_id,
             "status_code": status_code,
+            "h1": seo_data["h1"],
+            "title": seo_data["title"],
+            "description": seo_data["description"],
         })
         
         if check:
