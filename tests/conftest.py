@@ -1,4 +1,5 @@
 import os
+import uuid
 from unittest.mock import MagicMock
 
 import pytest
@@ -16,9 +17,8 @@ def setup_test_environment():
 
 @pytest.fixture
 def client():
-    """Создает тестовый клиент Flask приложения."""
+    """Создает тестовый клиент Flask-приложения."""
     app.config["TESTING"] = True
-    app.config["WTF_CSRF_ENABLED"] = False
     app.config["SECRET_KEY"] = "test-secret-key"
     
     with app.test_client() as client:
@@ -68,3 +68,8 @@ def mock_requests_response():
     )
     mock_response.raise_for_status.return_value = None
     return mock_response
+
+
+class UniqueUrlMixin:
+    def _get_unique_url(self) -> str:
+        return f"example.{uuid.uuid4()}.com"

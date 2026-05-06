@@ -1,12 +1,7 @@
 import pytest
-import uuid
 
 from page_analyzer.models import URL, UrlCheck
-
-
-class UniqueUrlMixin:
-    def _get_unique_url(self) -> str:
-        return f"example.{uuid.uuid4()}.com"
+from tests.conftest import UniqueUrlMixin
 
 
 class TestURLModel(UniqueUrlMixin):

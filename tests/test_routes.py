@@ -1,10 +1,10 @@
-import pytest
 from unittest.mock import patch, MagicMock
-from flask import flash
+
 from page_analyzer.models import URL, UrlCheck
+from tests.conftest import UniqueUrlMixin
 
 
-class TestRoutes:
+class TestRoutes(UniqueUrlMixin):
     """Тесты для маршрутов приложения."""
 
     def test_index_route(self, client):
@@ -15,29 +15,32 @@ class TestRoutes:
 
     def test_add_url_success(self, client):
         """Тест успешного добавления нового URL."""
-        response = client.post("/urls", data={"url": "https://example.com"})
-        
+        url_name = self._get_unique_url()
+        response = client.post("/urls", data={"url": f"https://{url_name}"})
+
+        created_url = URL().get(url_name, "name")
+
+        assert created_url is not None
+        assert created_url["name"] == url_name
         assert response.status_code == 302
-        assert response.location.endswith("/urls/1")
+        assert response.location.endswith(f"/urls/{created_url['id']}")
 
     def test_add_url_existing(self, client):
         """Тест добавления существующего URL."""
-        # First add a URL
-        url_model = URL()
-        url_model.create({"name": "example.com"}, check_existing_entity=False)
+        url_name = self._get_unique_url()
+        url = URL().create({"name": url_name})
         
-        # Try to add the same URL again
-        response = client.post("/urls", data={"url": "https://example.com"})
+        response = client.post("/urls", data={"url": f"https://{url_name}"})
         
         assert response.status_code == 302
-        assert response.location.endswith("/urls/1")
+        assert response.location.endswith(f"/urls/{url['id']}")
 
     def test_add_url_validation_empty(self, client):
         """Тест валидации пустого URL."""
-        response = client.post("/urls", data={"url": ''})
+        response = client.post("/urls", data={"url": ""})
         
         assert response.status_code == 422
-        assert "URL не может быть пустым" in response.data.decode('utf-8')
+        assert "URL не может быть пустым" in response.data.decode("utf-8")
 
     def test_add_url_validation_too_long(self, client):
         """Тест валидации слишком длинного URL."""
@@ -45,51 +48,59 @@ class TestRoutes:
         response = client.post("/urls", data={"url": long_url})
         
         assert response.status_code == 422
-        assert "URL не должен превышать 255 символов" in response.data.decode('utf-8')
+        assert (
+            "URL не должен превышать 255 символов"
+            in response.data.decode('utf-8')
+        )
 
     def test_add_url_validation_invalid(self, client):
         """Тест валидации некорректного URL."""
         response = client.post("/urls", data={"url": "not-an-url"})
         
         assert response.status_code == 422
-        assert "Некорректный URL" in response.data.decode('utf-8')
+        assert "Некорректный URL" in response.data.decode("utf-8")
 
     def test_urls_list(self, client):
         """Тест отображения списка URL."""
-        # Create some test URLs
-        url_model = URL()
-        url_model.create({"name": "example.com"}, check_existing_entity=False)
-        url_model.create({"name": "test.com"}, check_existing_entity=False)
+        test_url1 = self._get_unique_url()
+        test_url2 = self._get_unique_url()
+
+        URL().create({"name": test_url1}, check_existing_entity=False)
+        URL().create({"name": test_url2}, check_existing_entity=False)
         
         response = client.get("/urls")
         
         assert response.status_code == 200
-        assert b"example.com" in response.data
-        assert b"test.com" in response.data
+        assert test_url1 in response.data.decode("utf-8")
+        assert test_url2 in response.data.decode("utf-8")
 
     def test_show_url_success(self, client):
         """Тест отображения конкретного URL."""
-        # Create a test URL
-        url_model = URL()
-        url = url_model.create({"name": "example.com"}, check_existing_entity=False)
+        test_url = self._get_unique_url()
+        url = URL().create({"name": test_url}, check_existing_entity=False)
         
-        # Create a check for this URL
-        check_model = UrlCheck()
-        check_model.create({
+        h1 = "Suspendisse vel libero eu mi."
+        title = "Pellentesque sit amet pretium turpis."
+        description = "Nunc vel tellus suscipit, convallis."
+        UrlCheck().create({
             "url_id": url["id"],
             "status_code": 200,
-            "h1": "Test",
-            "title": "Test",
-            "description": "Test"
+            "h1": h1,
+            "title": title,
+            "description": description,
         })
         
         response = client.get(f"/urls/{url['id']}")
         
         assert response.status_code == 302
+        assert test_url in response.data.decode("utf-8")
+        assert h1 in response.data.decode("utf-8")
+        assert title in response.data.decode("utf-8")
+        assert description in response.data.decode("utf-8")
 
     def test_show_url_not_found(self, client):
         """Тест отображения несуществующего URL."""
-        response = client.get("/urls/999")
+        response = client.get("/urls/99999")
         
         assert response.status_code == 302
         assert response.location.endswith("/urls")
