@@ -1,4 +1,3 @@
-from enum import unique
 from unittest.mock import patch, MagicMock
 
 import pytest
@@ -162,11 +161,13 @@ class TestRoutes(UniqueUrlMixin):
 
     def test_url_normalization(self, client):
         """Тест нормализации URL при добавлении."""
-        unique_url = self._get_unique_url()
-        test_url = f"https://{unique_url}/path?query=param#fragmen"
-        response = client.post("/urls", data={"url": test_url})
+        test_url = self._get_unique_url()
+        response = client.post(
+            "/urls",
+            data={"url": f"https://{test_url}/path?query=param#fragment"},
+        )
 
-        url = URL().get(f"{unique_url}/path", "name")
+        url = URL().get(f"{test_url}/path", "name")
 
         assert url is not None
         assert response.status_code == 302

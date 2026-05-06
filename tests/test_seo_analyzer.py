@@ -1,4 +1,3 @@
-import pytest
 from page_analyzer.seo_analyzer import extract_seo_tags
 
 
