@@ -19,7 +19,7 @@
                     </tr>
                     <tr>
                         <th>Дата создания</th>
-                        <td>{{ url.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        <td>{{ url.created_at }}</td>
                     </tr>
                 </tbody>
             </table>
@@ -53,7 +53,7 @@
                             <td>{{ (check.h1[:200] + '...') if check.h1 and check.h1|length > 200 else (check.h1 or '') }}</td>
                             <td>{{ (check.title[:200] + '...') if check.title and check.title|length > 200 else (check.title or '') }}</td>
                             <td>{{ (check.description[:200] + '...') if check.description and check.description|length > 200 else (check.description or '') }}</td>
-                            <td>{{ check.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                            <td>{{ check.created_at }}</td>
                         </tr>
                         {% endfor %}
                     {% else %}

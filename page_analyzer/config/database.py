@@ -12,8 +12,8 @@ def get_db_connection() -> Union[psycopg.Connection, sqlite3.Connection]:
     load_dotenv()
     
     if os.getenv("TESTING") == "true":
-        db_path = os.getenv("TEST_DATABASE_PATH", ":memory:")
-        conn = sqlite3.connect(db_path)
+        database_url: str = os.getenv("TEST_DATABASE_PATH", ":memory:")
+        conn = sqlite3.connect(database_url)
         conn.row_factory = sqlite3.Row
         
         _create_test_schema(conn)

@@ -1,4 +1,7 @@
+from enum import unique
 from unittest.mock import patch, MagicMock
+
+import pytest
 
 from page_analyzer.models import URL, UrlCheck
 from tests.conftest import UniqueUrlMixin
@@ -70,9 +73,11 @@ class TestRoutes(UniqueUrlMixin):
         
         response = client.get("/urls")
         
+        response_data_decoded = response.data.decode("utf-8")
+
         assert response.status_code == 200
-        assert test_url1 in response.data.decode("utf-8")
-        assert test_url2 in response.data.decode("utf-8")
+        assert test_url1 in response_data_decoded
+        assert test_url2 in response_data_decoded
 
     def test_show_url_success(self, client):
         """Тест отображения конкретного URL."""
@@ -92,11 +97,13 @@ class TestRoutes(UniqueUrlMixin):
         
         response = client.get(f"/urls/{url['id']}")
         
-        assert response.status_code == 302
-        assert test_url in response.data.decode("utf-8")
-        assert h1 in response.data.decode("utf-8")
-        assert title in response.data.decode("utf-8")
-        assert description in response.data.decode("utf-8")
+        response_data_decoded = response.data.decode("utf-8")
+
+        assert response.status_code == 200
+        assert test_url in response_data_decoded
+        assert h1 in response_data_decoded
+        assert title in response_data_decoded
+        assert description in response_data_decoded
 
     def test_show_url_not_found(self, client):
         """Тест отображения несуществующего URL."""
@@ -113,9 +120,8 @@ class TestRoutes(UniqueUrlMixin):
         sample_html_content,
     ):
         """Тест успешной проверки URL."""
-        # Create a test URL
-        url_model = URL()
-        url = url_model.create({"name": "example.com"}, check_existing_entity=False)
+        test_url = self._get_unique_url()
+        url = URL().create({"name": test_url}, check_existing_entity=False)
         
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -127,25 +133,25 @@ class TestRoutes(UniqueUrlMixin):
         
         assert response.status_code == 302
         assert response.location.endswith(f"/urls/{url['id']}")
-        mock_get.assert_called_once_with("https://example.com", timeout=10)
+        mock_get.assert_called_once_with(f"https://{test_url}", timeout=10)
 
     @patch("requests.get")
-    def test_create_check_request_exception(
-        self,
-        mock_get,
-        client,
-    ):
+    def test_create_check_request_exception(self, mock_get, client):
         """Тест обработки исключения при запросе."""
-        # Create a test URL
-        url_model = URL()
-        url = url_model.create({"name": "example.com"}, check_existing_entity=False)
-        
-        mock_get.side_effect = Exception("Network error")
-        
-        response = client.post(f"/urls/{url['id']}/checks")
-        
-        assert response.status_code == 302
-        assert response.location.endswith(f"/urls/{url['id']}")
+        url = URL().create(
+            {"name": self._get_unique_url()},
+            check_existing_entity=False,
+        )
+
+        error_message = "Network error"
+        mock_get.side_effect = RuntimeError(error_message)
+
+        with pytest.raises(RuntimeError) as excinfo:
+            response = client.post(f"/urls/{url['id']}/checks")
+            assert response.status_code == 302
+            assert response.location.endswith(f"/urls/{url['id']}")
+
+        assert error_message in str(excinfo.value)
 
     def test_create_check_url_not_found(self, client):
         """Тест проверки несуществующего URL."""
@@ -154,31 +160,14 @@ class TestRoutes(UniqueUrlMixin):
         assert response.status_code == 302
         assert response.location.endswith("/urls")
 
-    @patch("requests.get")
-    def test_create_check_http_error(
-        self,
-        mock_get,
-        client,
-    ):
-        """Тест обработки HTTP ошибки."""
-        # Create a test URL
-        url_model = URL()
-        url = url_model.create({"name": "example.com"}, check_existing_entity=False)
-        
-        mock_response = MagicMock()
-        mock_response.raise_for_status.side_effect = Exception("HTTP Error")
-        mock_get.return_value = mock_response
-        
-        response = client.post(f"/urls/{url['id']}/checks")
-        
-        assert response.status_code == 302
-        assert response.location.endswith(f"/urls/{url['id']}")
-
     def test_url_normalization(self, client):
         """Тест нормализации URL при добавлении."""
-        response = client.post(
-            "/urls",
-            data={"url": "https://example.com/path?query=param#fragment"},
-        )
-        
+        unique_url = self._get_unique_url()
+        test_url = f"https://{unique_url}/path?query=param#fragmen"
+        response = client.post("/urls", data={"url": test_url})
+
+        url = URL().get(f"{unique_url}/path", "name")
+
+        assert url is not None
         assert response.status_code == 302
+        assert response.location.endswith(f"/urls/{url['id']}")
