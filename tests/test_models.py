@@ -74,14 +74,12 @@ class TestUrlCheckModel(UniqueUrlMixin):
 
     def test_create_url_check(self):
         """Тест создания проверки URL."""
-        url_model = URL()
-        url = url_model.create(
+        url = URL().create(
             {"name": self._get_unique_url()},
             check_existing_entity=False,
         )
         
-        check_model = UrlCheck()
-        result = check_model.create({
+        result = UrlCheck().create({
             "url_id": url["id"],
             "status_code": 200,
             "h1": "Test",
@@ -95,21 +93,19 @@ class TestUrlCheckModel(UniqueUrlMixin):
 
     def test_filter_url_checks_by_url_id(self):
         """Тест фильтрации проверок по URL ID."""
-        url_model = URL()
-        url = url_model.create(
+        url = URL().create(
             {"name": self._get_unique_url()},
             check_existing_entity=False,
         )
         
-        check_model = UrlCheck()
-        check_model.create({
+        UrlCheck().create({
             "url_id": url["id"],
             "status_code": 200,
             "h1": "Test1",
             "title": "Test1",
             "description": "Test1"
         })
-        check_model.create({
+        UrlCheck().create({
             "url_id": url["id"],
             "status_code": 201,
             "h1": "Test2",
@@ -117,7 +113,7 @@ class TestUrlCheckModel(UniqueUrlMixin):
             "description": "Test2"
         })
         
-        result = check_model.filter({"url_id": url["id"]})
+        result = UrlCheck().filter({"url_id": url["id"]})
         
         assert len(result) == 2
         assert all(item["url_id"] == url["id"] for item in result)

@@ -1,10 +1,13 @@
 import os
+import sqlite3
 import uuid
-from unittest.mock import MagicMock
+from pathlib import Path
+from typing import Generator
 
 import pytest
 
 from page_analyzer.app import app
+from page_analyzer.models import base
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -24,6 +27,46 @@ def client():
     with app.test_client() as client:
         with app.app_context():
             yield client
+
+
+def create_test_schema(conn: sqlite3.Connection):
+    schema_path = (
+        Path(__file__).parent / "test_database.sql"
+    )
+    with open(schema_path, "r") as f:
+        schema_sql = f.read()
+
+    conn.executescript(schema_sql)
+    conn.commit()
+
+
+@pytest.fixture(scope="session")
+def shared_db_conn() -> Generator[sqlite3.Connection, None, None]:
+    """
+    Создает единое соединение с SQLite, которое живет всё время выполнения тестов.
+    """
+    conn = sqlite3.connect(":memory:", check_same_thread=False)
+    conn.row_factory = sqlite3.Row
+
+    create_test_schema(conn)
+
+    yield conn
+
+    conn.close()
+
+
+@pytest.fixture(scope="session", autouse=True)
+def setup_db_mock(shared_db_conn: sqlite3.Connection):
+    """
+    Подменяет функцию get_db_connection во всем приложении,
+    чтобы она всегда возвращала готовое соединение.
+    """
+    mp = pytest.MonkeyPatch()
+    mp.setattr(base, "get_db_connection", lambda: shared_db_conn)
+
+    yield mp
+
+    mp.undo()
 
 
 @pytest.fixture
@@ -55,19 +98,6 @@ def sample_html_without_seo():
     </body>
     </html>
     """
-
-
-@pytest.fixture
-def mock_requests_response():
-    """Мокирует ответ от requests.get."""
-    mock_response = MagicMock()
-    mock_response.status_code = 200
-    mock_response.text = (
-        "<html><head><title>Test</title></head><body>"
-        "<h1>Header</h1></body></html>"
-    )
-    mock_response.raise_for_status.return_value = None
-    return mock_response
 
 
 class UniqueUrlMixin:
