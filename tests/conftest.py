@@ -102,4 +102,4 @@ def sample_html_without_seo():
 
 class UniqueUrlMixin:
     def _get_unique_url(self) -> str:
-        return f"example.{uuid.uuid4()}.com"
+        return f"https://example.{uuid.uuid4()}.com"

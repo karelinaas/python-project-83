@@ -18,7 +18,7 @@ class TestRoutes(UniqueUrlMixin):
     def test_add_url_success(self, client):
         """Тест успешного добавления нового URL."""
         url_name = self._get_unique_url()
-        response = client.post("/urls", data={"url": f"https://{url_name}"})
+        response = client.post("/urls", data={"url": url_name})
 
         created_url = URL().get(url_name, "name")
 
@@ -32,7 +32,7 @@ class TestRoutes(UniqueUrlMixin):
         url_name = self._get_unique_url()
         url = URL().create({"name": url_name})
         
-        response = client.post("/urls", data={"url": f"https://{url_name}"})
+        response = client.post("/urls", data={"url": url_name})
         
         assert response.status_code == 302
         assert response.location.endswith(f"/urls/{url['id']}")
@@ -132,7 +132,7 @@ class TestRoutes(UniqueUrlMixin):
         
         assert response.status_code == 302
         assert response.location.endswith(f"/urls/{url['id']}")
-        mock_get.assert_called_once_with(f"https://{test_url}", timeout=10)
+        mock_get.assert_called_once_with(test_url, timeout=10)
 
     @patch("requests.get")
     def test_create_check_request_exception(self, mock_get, client):
@@ -164,7 +164,7 @@ class TestRoutes(UniqueUrlMixin):
         test_url = self._get_unique_url()
         response = client.post(
             "/urls",
-            data={"url": f"https://{test_url}/path?query=param#fragment"},
+            data={"url": f"{test_url}/path?query=param#fragment"},
         )
 
         url = URL().get(test_url, "name")

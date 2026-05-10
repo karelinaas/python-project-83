@@ -50,7 +50,7 @@ def add_url() -> Response | str | tuple[str, int]:
 
     # Проверка на существование (с нормализацией)
     parsed = urlparse(url)
-    normalized_name = parsed.netloc
+    normalized_name = f"{parsed.scheme}://{parsed.netloc}"
     existing_url = URL().check_exists_before_insert({"name": normalized_name})
     if existing_url:
         flash("Страница уже существует", "info")
@@ -92,10 +92,9 @@ def create_check(url_id: int) -> Response:
     if not url:
         flash("Страница не найдена", "danger")
         return redirect(url_for("urls.urls_list"))
-    
-    full_url = f"https://{url['name']}"
+
     try:
-        response = requests.get(full_url, timeout=10)
+        response = requests.get(url["name"], timeout=10)
         response.raise_for_status()
         status_code = response.status_code
         
