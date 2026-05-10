@@ -43,7 +43,8 @@ def create_test_schema(conn: sqlite3.Connection):
 @pytest.fixture(scope="session")
 def shared_db_conn() -> Generator[sqlite3.Connection, None, None]:
     """
-    Создает единое соединение с SQLite, которое живет всё время выполнения тестов.
+    Создает единое соединение с SQLite,
+    которое живет всё время выполнения тестов.
     """
     conn = sqlite3.connect(":memory:", check_same_thread=False)
     conn.row_factory = sqlite3.Row
