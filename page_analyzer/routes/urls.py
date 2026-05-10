@@ -71,7 +71,8 @@ def add_url() -> Response | str | tuple[str, int]:
 
 @urls.get("/urls")
 def urls_list() -> str:
-    url_items = URL().get_all(order_by=("created_at",), order_asc=False)
+    urls = URL().get_all(order_by=("created_at",), order_asc=False)
+    url_items = UrlCheck().get_list_with_urls(urls)
     return render_template("urls.html", urls=url_items)
 
 
