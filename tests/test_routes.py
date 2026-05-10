@@ -167,7 +167,7 @@ class TestRoutes(UniqueUrlMixin):
             data={"url": f"https://{test_url}/path?query=param#fragment"},
         )
 
-        url = URL().get(f"{test_url}/path", "name")
+        url = URL().get(test_url, "name")
 
         assert url is not None
         assert response.status_code == 302
