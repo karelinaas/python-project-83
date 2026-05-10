@@ -14,7 +14,7 @@ from flask import (
 )
 
 from page_analyzer.models import URL, UrlCheck
-from page_analyzer.seo_analyzer import extract_seo_tags
+from page_analyzer.utils.seo_analyzer import extract_seo_tags
 
 urls = Blueprint("urls", __name__, template_folder="templates")
 
