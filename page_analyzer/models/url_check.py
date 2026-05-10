@@ -17,7 +17,7 @@ class UrlCheck(BaseModel):
             GROUP BY url_id, status_code
         """
 
-        urls_checks =self._execute(query=query, return_one_entity=False)
+        urls_checks = self._execute(query=query, return_one_entity=False)
 
         for url_check in urls_checks:
             url_ids_map[str(url_check["url_id"])].update(url_check)
