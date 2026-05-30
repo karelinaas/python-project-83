@@ -15,11 +15,12 @@ class URL(UniqueModel):
         if "name" not in column_values:
             raise Exception("Model is unique by name")
 
+        pattern = column_values["name"] + "%"
         return self._execute(
             query=(
                 f"SELECT * FROM {self.table_name} "
-                f"WHERE name = %s"
+                f"WHERE name LIKE %s"
             ),
-            params=(column_values["name"],),
+            params=(pattern,),
             return_one_entity=True,
         )
