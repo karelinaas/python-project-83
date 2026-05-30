@@ -18,7 +18,7 @@ class URL(UniqueModel):
         return self._execute(
             query=(
                 f"SELECT * FROM {self.table_name} "
-                f"WHERE name = {self.PLACEHOLDER}"
+                f"WHERE name = %s"
             ),
             params=(column_values["name"],),
             return_one_entity=True,
