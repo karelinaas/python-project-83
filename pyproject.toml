@@ -29,3 +29,6 @@ dev = [
     "pytest-cov>=4.0.0",
     "ruff",
 ]
+
+[tool.hatch.build.targets.wheel]
+packages = ["page_analyzer"]
