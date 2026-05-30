@@ -18,12 +18,6 @@ def get_db_connection() -> psycopg.Connection:
 
 
 class BaseModel(abc.ABC):
-    PLACEHOLDER = "%s"
-
-    def __init__(self):
-        if os.getenv("TESTING") == "true":
-            self.PLACEHOLDER = "?"
-
     @property
     @abc.abstractmethod
     def table_name(self) -> str:
@@ -38,7 +32,7 @@ class BaseModel(abc.ABC):
         filter_values = tuple()
 
         for key, value in filter_parameters.items():
-            filter_string += f"{key} = {self.PLACEHOLDER} AND "
+            filter_string += f"{key} = %s AND "
             filter_values += (value,)
         filter_string = filter_string.rstrip(" AND ")
 
@@ -58,9 +52,7 @@ class BaseModel(abc.ABC):
         **__,
     ) -> Row | None:
         columns = ", ".join(column_values.keys())
-        values_placeholders = ", ".join(
-            [self.PLACEHOLDER] * len(column_values)
-        )
+        values_placeholders = ", ".join(["%s"] * len(column_values))
 
         entity_id = self._execute(
             query=(
