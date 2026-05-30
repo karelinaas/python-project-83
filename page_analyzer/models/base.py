@@ -3,9 +3,18 @@ import os
 from contextlib import closing
 from typing import Any
 
-from psycopg.rows import Row
+import psycopg
+from dotenv import load_dotenv
+from psycopg.rows import Row, dict_row
 
-from page_analyzer.config.database import get_db_connection
+
+def get_db_connection() -> psycopg.Connection:
+    load_dotenv()
+
+    database_url: str | None = os.getenv("DATABASE_URL")
+    if not database_url:
+        raise Exception("DATABASE_URL environment variable not set")
+    return psycopg.connect(database_url, row_factory=dict_row)
 
 
 class BaseModel(abc.ABC):
